@@ -1,0 +1,13 @@
+Flask==2.2.3 
+Flask-Cors==3.0.10 
+langchain==0.1.6 
+langchain-community==0.0.16 
+langchain-huggingface==0.0.3 
+faiss-cpu==1.7.4 
+pypdf==3.17.1 
+transformers==4.36.2 
+sentence-transformers==2.2.2 
+torch==2.1.2 
+huggingface_hub==0.20.2 
+langdetect==1.0.9
+googletrans==4.0.0-rc1

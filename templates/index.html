@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot RAG PDF - Asistente de Documentos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> DotBot BotPro</h1>
+            <p> (RAG) Para BotPro
+            </p>
+            <div class="warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                Este es un demo sensillo, para mas potencia se necesita mas recursos (Memoria y GPU)
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="left-column">
+                <div class="panel">
+                    <h2 class="panel-title">
+                        <i class="fas fa-file-pdf"></i> Paso 1: Subir documentos PDF
+                    </h2>
+                    <div class="file-upload-container" id="dropZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <h3>Arrastre aquí sus archivos PDF</h3>
+                        <p>o haga clic para seleccionar archivos</p>
+                        <input type="file" class="file-input" id="fileInput" multiple accept=".pdf">
+                    </div>
+
+                    <div id="fileList" class="file-list"></div>
+
+                    <button id="createDatabaseBtn" class="button button-primary">
+                        <i class="fas fa-database"></i> Crear base de datos vectorial
+                    </button>
+
+                    <div id="databaseStatus" class="status status-pending hidden">
+                        <span id="databaseStatusText">Procesando documentos...</span>
+                    </div>
+
+                    <div id="pdfPreviewContainer" class="hidden">
+                        <h3 style="margin-top: 20px; margin-bottom: 10px;">Vista previa del documento</h3>
+                        <iframe id="pdfPreview" class="pdf-preview"></iframe>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2 class="panel-title">
+                        <i class="fas fa-sliders-h"></i> Configuración del Modelo
+                    </h2>
+
+                    <div class="radio-group" id="modelSelection">
+                        <p style="width: 100%; margin-bottom: 10px;">Modelo de Lenguaje:</p>
+                        <div class="radio-option">
+                            <input type="radio" id="model1" name="model" value="meta-llama/Meta-Llama-3-8B-Instruct"
+                                checked>
+                            <label for="model1">Llama-3-8B</label>
+                        </div>
+                        <div class="radio-option">
+                            <input type="radio" id="model2" name="model" value="mistralai/Mistral-7B-Instruct-v0.2">
+                            <label for="model2">Mistral-7B</label>
+                        </div>
+                    </div>
+
+                    <div class="parameter-control">
+                        <label for="temperatureSlider">
+                            Temperatura
+                            <span class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Controla la aleatoriedad de las respuestas. Valores más altos
+                                    producen respuestas más creativas, valores más bajos generan respuestas más
+                                    deterministas.</span>
+                            </span>
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="temperatureSlider" min="0.1" max="1.0" step="0.1" value="0.5">
+                            <span class="parameter-value" id="temperatureValue">0.5</span>
+                        </div>
+                    </div>
+
+                    <div class="parameter-control">
+                        <label for="maxTokensSlider">
+                            Máximo de tokens
+                            <span class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Define la longitud máxima de la respuesta generada.</span>
+                            </span>
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="maxTokensSlider" min="128" max="4096" step="128" value="2048">
+                            <span class="parameter-value" id="maxTokensValue">2048</span>
+                        </div>
+                    </div>
+
+                    <div class="parameter-control">
+                        <label for="topKSlider">
+                            Top-K
+                            <span class="tooltip">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="tooltip-text">Número de tokens de mayor probabilidad a considerar para
+                                    generar el siguiente token.</span>
+                            </span>
+                        </label>
+                        <div class="slider-container">
+                            <input type="range" id="topKSlider" min="1" max="10" step="1" value="3">
+                            <span class="parameter-value" id="topKValue">3</span>
+                        </div>
+                    </div>
+
+                    <button id="initModelBtn" class="button">
+                        <i class="fas fa-cog"></i> Inicializar Chatbot
+                    </button>
+
+                    <div id="modelStatus" class="status status-pending hidden">
+                        <span id="modelStatusText">Inicializando modelo...</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-column">
+                <div class="panel">
+                    <h2 class="panel-title">
+                        <i class="fas fa-comments"></i> Paso 2: Consulta tus documentos
+                    </h2>
+
+                    <div class="chatbox-container">
+                        <div id="chatMessages" class="chat-messages">
+                            <div class="message message-bot">
+                                <p>¡Hola! Sube uno o más documentos PDF para comenzar. Luego podrás hacerme preguntas
+                                    sobre su contenido.</p>
+                            </div>
+                        </div>
+
+                        <div class="chat-input-container">
+                            <input type="text" id="chatInput" class="chat-input"
+                                placeholder="Escribe tu pregunta aquí..." disabled>
+                            <button id="sendBtn" class="chat-send-btn" disabled>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="sources-accordion">
+                        <div class="accordion-header" id="sourcesHeader">
+                            <span><i class="fas fa-book"></i> Fuentes de la respuesta</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="accordion-content" id="sourcesContent">
+                            <div id="sourcesList">
+                                <div class="loading-spinner hidden" id="sourcesLoader">
+                                    <div class="spinner"></div>
+                                </div>
+                                <div class="source-item">
+                                    <p>Aún no hay fuentes disponibles. Haga una pregunta para ver las fuentes.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="export-chat">
+                        <button id="exportBtn" class="button" disabled>
+                            <i class="fas fa-download"></i> Exportar Conversación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>
